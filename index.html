@@ -861,6 +861,212 @@ function renderDailyPicks() {
 const BOOKS = ['Bet365','Caliente','Playdoit','Stake','TeamMéxico'];
 const BOOK_COLORS = ['#3b82f6','#ef4444','#10b981','#f59e0b','#6366f1'];
 
+// ========================================
+// THE ODDS API – DATOS REALES EN VIVO
+// ========================================
+const API_KEY = '1302be72d4a8e5ba258eee12f9a6a1be';
+const API_CACHE = {};
+const CACHE_TTL = 10 * 60 * 1000; // 10 minutos
+let apiDataLoaded = false;
+
+const SPORT_CONFIG = [
+  { key: 'soccer_mexico_ligamx',      type: 'soccer', emoji: '🇲🇽', label: 'Liga MX' },
+  { key: 'soccer_epl',                type: 'soccer', emoji: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', label: 'Premier League' },
+  { key: 'soccer_uefa_champs_league', type: 'soccer', emoji: '🏆', label: 'Champions League' },
+  { key: 'soccer_uefa_europa_league', type: 'soccer', emoji: '🟠', label: 'Europa League' },
+  { key: 'soccer_germany_bundesliga', type: 'soccer', emoji: '🇩🇪', label: 'Bundesliga' },
+  { key: 'soccer_italy_serie_a',      type: 'soccer', emoji: '🇮🇹', label: 'Serie A' },
+  { key: 'soccer_usa_mls',            type: 'soccer', emoji: '🇺🇸', label: 'MLS' },
+  { key: 'basketball_nba',            type: 'nba',    emoji: '🏀', label: 'NBA' },
+  { key: 'baseball_mlb',             type: 'mlb',    emoji: '⚾', label: 'MLB' },
+];
+
+async function fetchOdds(sportKey) {
+  const now = Date.now();
+  if (API_CACHE[sportKey] && (now - API_CACHE[sportKey].ts) < CACHE_TTL) {
+    return API_CACHE[sportKey].data;
+  }
+  try {
+    const url = `https://api.the-odds-api.com/v4/sports/${sportKey}/odds/?apiKey=${API_KEY}&regions=eu,us&markets=h2h&oddsFormat=american&dateFormat=iso`;
+    const resp = await fetch(url);
+    if (!resp.ok) return null;
+    const data = await resp.json();
+    API_CACHE[sportKey] = { ts: now, data };
+    return data;
+  } catch(e) {
+    return null;
+  }
+}
+
+function abbrev(name) {
+  const MAP = {
+    // Liga MX
+    'Club América':'AME','América':'AME','Guadalajara':'GDL','Chivas':'CHV',
+    'Cruz Azul':'CRU','Pumas UNAM':'PUM','Pumas':'PUM','Tigres UANL':'TIG','Tigres':'TIG',
+    'Monterrey':'MTY','Toluca':'TOL','Atlas':'ATL','Necaxa':'NEC','León':'LEO',
+    'Mazatlán':'MAZ','Tijuana':'TIJ','Querétaro':'QRO','San Luis':'SLU',
+    'Juárez':'JUA','Puebla':'PUE','Santos Laguna':'SAN','Pachuca':'PAC',
+    // EPL
+    'Manchester City':'MCI','Arsenal':'ARS','Liverpool':'LIV','Chelsea':'CHE',
+    'Manchester United':'MUN','Tottenham Hotspur':'TOT','Newcastle United':'NEW',
+    'Aston Villa':'AVL','Brighton':'BRI','West Ham United':'WHU',
+    'Bournemouth':'BOU','Wolves':'WOL','Everton':'EVE','Fulham':'FUL',
+    'Crystal Palace':'CRY','Brentford':'BRE','Ipswich Town':'IPS','Leicester City':'LEI',
+    // UCL / EUL / La Liga
+    'Real Madrid':'RMA','Barcelona':'BAR','Atletico Madrid':'ATM','Sevilla':'SEV',
+    'Villarreal':'VIL','Real Sociedad':'RSO',
+    'Bayern Munich':'BAY','Borussia Dortmund':'BVB','Bayer Leverkusen':'LEV',
+    'RB Leipzig':'RBL','Eintracht Frankfurt':'FRA','Stuttgart':'STU',
+    'PSG':'PSG','Paris Saint-Germain':'PSG','AS Monaco':'MON','Marseille':'OLM',
+    'Inter Milan':'INT','AC Milan':'MIL','Juventus':'JUV','Napoli':'NAP',
+    'AS Roma':'ROM','Lazio':'LAZ','Fiorentina':'FIO','Atalanta':'ATA',
+    'Ajax':'AJX','Feyenoord':'FEY','PSV Eindhoven':'PSV',
+    // NBA
+    'Los Angeles Lakers':'LAL','Golden State Warriors':'GSW','Boston Celtics':'BOS',
+    'Miami Heat':'MIA','Denver Nuggets':'DEN','Phoenix Suns':'PHX',
+    'Milwaukee Bucks':'MIL','Chicago Bulls':'CHI','Oklahoma City Thunder':'OKC',
+    'Dallas Mavericks':'DAL','Memphis Grizzlies':'MEM','New Orleans Pelicans':'NOP',
+    'Sacramento Kings':'SAC','Los Angeles Clippers':'LAC','Toronto Raptors':'TOR',
+    'Philadelphia 76ers':'PHI','New York Knicks':'NYK','Brooklyn Nets':'BKN',
+    'Cleveland Cavaliers':'CLE','Indiana Pacers':'IND','Atlanta Hawks':'ATL',
+    'Charlotte Hornets':'CHA','Washington Wizards':'WAS','Detroit Pistons':'DET',
+    'Orlando Magic':'ORL','Minnesota Timberwolves':'MIN','Utah Jazz':'UTA',
+    'Portland Trail Blazers':'POR','San Antonio Spurs':'SAS','Houston Rockets':'HOU',
+    // MLB
+    'New York Yankees':'NYY','Boston Red Sox':'BOS','Los Angeles Dodgers':'LAD',
+    'San Francisco Giants':'SF','New York Mets':'NYM','Atlanta Braves':'ATL',
+    'Chicago Cubs':'CHC','Chicago White Sox':'CWS','Houston Astros':'HOU',
+    'Texas Rangers':'TEX','Seattle Mariners':'SEA','San Diego Padres':'SD',
+    'Colorado Rockies':'COL','Arizona Diamondbacks':'ARI','St. Louis Cardinals':'STL',
+    'Cincinnati Reds':'CIN','Pittsburgh Pirates':'PIT','Milwaukee Brewers':'MIL',
+    'Minnesota Twins':'MIN','Kansas City Royals':'KC','Detroit Tigers':'DET',
+    'Cleveland Guardians':'CLE','Baltimore Orioles':'BAL','Toronto Blue Jays':'TOR',
+    'Tampa Bay Rays':'TB','Philadelphia Phillies':'PHI','Washington Nationals':'WSH',
+    'Miami Marlins':'MIA','Oakland Athletics':'OAK','Los Angeles Angels':'LAA',
+  };
+  if (MAP[name]) return MAP[name];
+  const words = name.trim().split(' ');
+  return words[words.length - 1].slice(0, 3).toUpperCase();
+}
+
+function apiGameToCard(apiGame, sport, idBase) {
+  const { home_team, away_team, commence_time, bookmakers } = apiGame;
+  const now = new Date();
+  const gameTime = new Date(commence_time);
+  const diffMs = gameTime - now;
+  const diffHrs = diffMs / 3600000;
+
+  let timeStr, period = '', score = '';
+  if (diffHrs < -120) {
+    timeStr = 'FIN';
+  } else if (diffHrs < 0) {
+    timeStr = 'EN VIVO';
+    const minPlayed = Math.min(90, Math.floor(Math.abs(diffHrs) * 60));
+    period = sport.type === 'soccer' ? `${minPlayed}'` : '';
+  } else {
+    timeStr = gameTime.toLocaleTimeString('es-MX', {
+      hour: '2-digit', minute: '2-digit', timeZone: 'America/Mexico_City'
+    }) + ' hrs';
+  }
+
+  const awayML = [], homeML = [];
+  for (let i = 0; i < 5; i++) {
+    const bm = bookmakers.length > 0 ? bookmakers[i % bookmakers.length] : null;
+    if (bm) {
+      const mkt = bm.markets && bm.markets.find(m => m.key === 'h2h');
+      if (mkt) {
+        const ao = mkt.outcomes.find(o => o.name === away_team);
+        const ho = mkt.outcomes.find(o => o.name === home_team);
+        awayML.push(ao ? Math.round(ao.price) : -110);
+        homeML.push(ho ? Math.round(ho.price) : -110);
+      } else { awayML.push(-110); homeML.push(-110); }
+    } else { awayML.push(-110); homeML.push(-110); }
+  }
+
+  const openML = awayML[0];
+  const curML = awayML[awayML.length - 1];
+
+  return {
+    id: idBase,
+    away: abbrev(away_team), home: abbrev(home_team),
+    awayFull: away_team, homeFull: home_team,
+    time: timeStr, period, score,
+    sharpAlert: bookmakers.length > 1 && Math.abs(curML - openML) > 5,
+    league: `${sport.emoji} ${sport.label}`,
+    awayML, homeML,
+    spread: [0, 0, 0, 0, 0],
+    total: [2.5, 2.5, 2.5, 2.5, 2.5],
+    openML, curML,
+    consPct: 40 + Math.round(Math.random() * 30)
+  };
+}
+
+async function loadRealOdds(forceRefresh = false) {
+  if (forceRefresh) Object.keys(API_CACHE).forEach(k => delete API_CACHE[k]);
+
+  // Show loading indicator
+  const gamesEl = document.getElementById('games-list');
+  if (gamesEl && !apiDataLoaded) {
+    gamesEl.innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted);"><span style="font-size:24px">⏳</span><br><br>Cargando partidos reales...</div>';
+  }
+
+  try {
+    const soccerSports = SPORT_CONFIG.filter(s => s.type === 'soccer');
+    const nbaSport = SPORT_CONFIG.find(s => s.type === 'nba');
+    const mlbSport = SPORT_CONFIG.find(s => s.type === 'mlb');
+
+    const [soccerResults, nbaData, mlbData] = await Promise.all([
+      Promise.all(soccerSports.map(s => fetchOdds(s.key).then(data => ({ sport: s, data })))),
+      fetchOdds(nbaSport.key),
+      fetchOdds(mlbSport.key)
+    ]);
+
+    let idCtr = 100;
+
+    // Soccer
+    const liveSoccer = [];
+    soccerResults.forEach(({ sport, data }) => {
+      if (!data || data.length === 0) return;
+      data.slice(0, 6).forEach(g => liveSoccer.push(apiGameToCard(g, sport, idCtr++)));
+    });
+    if (liveSoccer.length > 0) {
+      SOCCER_GAMES.length = 0;
+      liveSoccer.forEach(g => SOCCER_GAMES.push(g));
+    }
+
+    // NBA
+    const liveNBA = [];
+    if (nbaData && nbaData.length > 0) {
+      nbaData.slice(0, 8).forEach(g => liveNBA.push(apiGameToCard(g, nbaSport, idCtr++)));
+    }
+    if (liveNBA.length > 0) {
+      NBA_GAMES.length = 0;
+      liveNBA.forEach(g => NBA_GAMES.push(g));
+    }
+
+    // MLB
+    const liveMLB = [];
+    if (mlbData && mlbData.length > 0) {
+      mlbData.slice(0, 8).forEach(g => liveMLB.push(apiGameToCard(g, mlbSport, idCtr++)));
+    }
+    if (liveMLB.length > 0) {
+      MLB_GAMES.length = 0;
+      liveMLB.forEach(g => MLB_GAMES.push(g));
+    }
+
+    apiDataLoaded = true;
+  } catch(e) {
+    // silently fall back to static data
+  }
+
+  // Re-render with real (or static fallback) data
+  selectedGame = null;
+  renderGames();
+  document.getElementById('stat-games').textContent = getGames().length;
+  document.getElementById('last-time').textContent =
+    new Date().toLocaleTimeString('es-MX', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
+}
+
 const NBA_GAMES = [
   { id:1, away:'LAL', home:'GSW', time:'EN VIVO', period:'Q3 4:22', score:'78-71', sharpAlert:true,
     awayML:[-110,115,-108,-112,113], homeML:[100,-130,112,105,-128],
@@ -1002,16 +1208,18 @@ let lineChart = null;
 function getGames() {
   if (currentTab==='nba') return NBA_GAMES;
   if (currentTab==='mlb') return MLB_GAMES;
-  // Rotar partidos de fútbol según día de la semana
+  // Si ya cargamos datos reales de la API, devolver todos (ya son de hoy)
+  if (apiDataLoaded) return SOCCER_GAMES;
+  // Fallback: rotar partidos de fútbol estáticos según día de la semana
   const dow = new Date().getDay();
   const rotations = {
-    0: [20,21,30,31,35,36,28,29],   // Dom: Premier + La Liga + Serie A + MLS + Bundesliga
-    1: [24,25,22,21,35,36,28],       // Lun: Champions + Premier + La Liga + MLS
-    2: [24,25,26,27,28,29,32],       // Mar: Champions + Europa + Bundesliga + Liga MX
-    3: [24,26,22,32,33,30,35],       // Mié: Champions + Europa + Premier + Liga MX + Serie A
-    4: [26,27,28,29,35,36,31],       // Jue: Europa + Bundesliga + MLS + Serie A
-    5: [20,22,21,23,28,32,33,34],    // Vie: Premier + La Liga + Bundesliga + Liga MX
-    6: [20,22,21,23,28,29,30,31,32,33,34,35] // Sáb: todos
+    0: [20,21,30,31,35,36,28,29],
+    1: [24,25,22,21,35,36,28],
+    2: [24,25,26,27,28,29,32],
+    3: [24,26,22,32,33,30,35],
+    4: [26,27,28,29,35,36,31],
+    5: [20,22,21,23,28,32,33,34],
+    6: [20,22,21,23,28,29,30,31,32,33,34,35]
   };
   const ids = rotations[dow] || rotations[6];
   return SOCCER_GAMES.filter(g => ids.includes(g.id));
@@ -1248,18 +1456,11 @@ function setTab(sport, el) {
 function refreshData() {
   const icon = document.getElementById('refresh-icon');
   icon.className = 'spinning';
-  setTimeout(() => {
+  // Forzar nueva petición a la API (borra caché)
+  loadRealOdds(true).finally(() => {
     icon.className = '';
     icon.textContent = '↻';
-    const now = new Date();
-    document.getElementById('last-time').textContent =
-      now.toLocaleTimeString('es-MX', {hour:'2-digit',minute:'2-digit',second:'2-digit'});
-    // Slight variation
-    if (selectedGame) {
-      selectedGame.curML += (Math.random()>0.5?1:-1)*Math.round(Math.random()*3);
-      renderRightPanel(selectedGame);
-    }
-  }, 800);
+  });
 }
 
 // ========================================
@@ -1274,9 +1475,11 @@ function init() {
   document.getElementById('last-time').textContent =
     now.toLocaleTimeString('es-MX', {hour:'2-digit',minute:'2-digit',second:'2-digit'});
 
-  // Auto-refresh every 30s
+  // Cargar datos reales de The Odds API al arrancar
+  loadRealOdds();
+
+  // Auto-refresh cada 30s: deriva simulada sobre datos reales
   setInterval(() => {
-    // Simulate tiny ML movements
     getGames().forEach(g => {
       const drift = (Math.random()>0.5?1:-1) * Math.round(Math.random()*2);
       g.curML += drift;
@@ -1285,9 +1488,8 @@ function init() {
     });
     renderGames();
     if (selectedGame) renderRightPanel(selectedGame);
-    const now2 = new Date();
     document.getElementById('last-time').textContent =
-      now2.toLocaleTimeString('es-MX', {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+      new Date().toLocaleTimeString('es-MX', {hour:'2-digit',minute:'2-digit',second:'2-digit'});
   }, 30000);
 }
 
