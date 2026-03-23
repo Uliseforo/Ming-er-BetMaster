@@ -1,0 +1,1297 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mingüer BetMaster 🤘🏽😎</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --bg: #0a0e1a;
+    --bg2: #111827;
+    --bg3: #1a2235;
+    --accent: #3b82f6;
+    --accent2: #6366f1;
+    --green: #10b981;
+    --red: #ef4444;
+    --yellow: #f59e0b;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --border: #1e2d47;
+    --sharp: #f59e0b;
+    --card: #141e2e;
+  }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Header */
+  header {
+    background: linear-gradient(135deg, #0a0e1a 0%, #111827 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    backdrop-filter: blur(10px);
+  }
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 20px;
+    font-weight: 700;
+    background: linear-gradient(90deg, #3b82f6, #6366f1);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .logo span { font-size: 24px; }
+  .live-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(16,185,129,0.15);
+    border: 1px solid rgba(16,185,129,0.3);
+    color: var(--green);
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+  }
+  .live-dot {
+    width: 7px; height: 7px;
+    background: var(--green);
+    border-radius: 50%;
+    animation: pulse 1.5s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(1.3); }
+  }
+  .header-right { display: flex; align-items: center; gap: 16px; }
+  .last-update { font-size: 12px; color: var(--muted); }
+  #refresh-btn {
+    background: linear-gradient(135deg, #3b82f6, #6366f1);
+    border: none;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  #refresh-btn:hover { opacity: 0.85; transform: translateY(-1px); }
+
+  /* Layout */
+  .container { max-width: 1400px; margin: 0 auto; padding: 24px; }
+
+  /* Sport Tabs */
+  .sport-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 24px;
+    background: var(--bg2);
+    padding: 6px;
+    border-radius: 12px;
+    width: fit-content;
+    border: 1px solid var(--border);
+  }
+  .tab {
+    padding: 8px 20px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    background: transparent;
+    color: var(--muted);
+    transition: all 0.2s;
+  }
+  .tab.active {
+    background: linear-gradient(135deg, #3b82f6, #6366f1);
+    color: white;
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+  }
+  .tab:hover:not(.active) { color: var(--text); background: var(--bg3); }
+
+  /* Stats Row */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .stat-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    transition: border-color 0.2s;
+  }
+  .stat-card:hover { border-color: var(--accent); }
+  .stat-icon {
+    width: 42px; height: 42px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+  .stat-info { flex: 1; }
+  .stat-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+  .stat-value { font-size: 22px; font-weight: 700; }
+  .stat-sub { font-size: 11px; margin-top: 2px; }
+
+  /* Main Grid */
+  .main-grid {
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    gap: 20px;
+    margin-bottom: 20px;
+  }
+
+  /* Games List */
+  .section-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .section-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+  .game-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+  .game-card::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: var(--border);
+    transition: background 0.2s;
+  }
+  .game-card:hover { border-color: var(--accent); transform: translateX(2px); }
+  .game-card:hover::before { background: var(--accent); }
+  .game-card.selected { border-color: var(--accent2); }
+  .game-card.selected::before { background: var(--accent2); }
+  .game-card.sharp-alert::before { background: var(--sharp); }
+
+  .game-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 12px;
+  }
+  .game-teams { }
+  .matchup {
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .game-time { font-size: 12px; color: var(--muted); }
+  .live-tag {
+    background: rgba(239,68,68,0.15);
+    color: var(--red);
+    border: 1px solid rgba(239,68,68,0.3);
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 4px;
+    letter-spacing: 0.5px;
+  }
+  .score-tag {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 14px;
+    text-align: center;
+  }
+  .score-display { font-size: 18px; font-weight: 800; letter-spacing: 2px; }
+  .score-period { font-size: 10px; color: var(--muted); margin-top: 2px; }
+
+  /* Odds Grid */
+  .odds-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+  .odds-cell {
+    background: var(--bg3);
+    border-radius: 8px;
+    padding: 10px;
+    text-align: center;
+    border: 1px solid var(--border);
+    transition: all 0.2s;
+  }
+  .odds-cell:hover { border-color: var(--accent); }
+  .odds-book { font-size: 10px; color: var(--muted); margin-bottom: 4px; font-weight: 600; text-transform: uppercase; }
+  .odds-ml {
+    font-size: 17px;
+    font-weight: 800;
+    font-family: 'Courier New', monospace;
+  }
+  .odds-ml.pos { color: var(--green); }
+  .odds-ml.neg { color: var(--red); }
+  .odds-spread { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .best-odds { border-color: rgba(16,185,129,0.4); background: rgba(16,185,129,0.06); }
+
+  /* Movement indicator */
+  .movement {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border);
+  }
+  .mv-arrow { font-size: 14px; }
+  .mv-up { color: var(--green); }
+  .mv-down { color: var(--red); }
+  .mv-text { font-size: 12px; color: var(--muted); }
+  .mv-delta { font-weight: 700; font-family: monospace; font-size: 13px; }
+  .sharp-badge {
+    margin-left: auto;
+    background: rgba(245,158,11,0.15);
+    border: 1px solid rgba(245,158,11,0.4);
+    color: var(--yellow);
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 4px;
+    letter-spacing: 0.5px;
+    animation: glow 2s infinite;
+  }
+  @keyframes glow {
+    0%, 100% { box-shadow: 0 0 4px rgba(245,158,11,0.3); }
+    50% { box-shadow: 0 0 10px rgba(245,158,11,0.6); }
+  }
+
+  /* Right panel */
+  .right-panel { }
+  .panel-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px;
+    margin-bottom: 16px;
+  }
+
+  /* Chart */
+  .chart-wrapper { position: relative; height: 180px; }
+
+  /* Best odds finder */
+  .best-odds-list { }
+  .book-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .book-row:last-child { border-bottom: none; }
+  .book-name { font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+  .book-dot { width: 8px; height: 8px; border-radius: 50%; }
+  .book-odds-pair { display: flex; gap: 10px; }
+  .book-odd {
+    font-size: 14px;
+    font-weight: 700;
+    font-family: monospace;
+    background: var(--bg3);
+    padding: 4px 10px;
+    border-radius: 6px;
+    min-width: 60px;
+    text-align: center;
+  }
+  .book-odd.best-v { background: rgba(16,185,129,0.15); color: var(--green); border: 1px solid rgba(16,185,129,0.3); }
+
+  /* Consensus Bar */
+  .consensus-bar-wrap { margin-top: 12px; }
+  .consensus-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    margin-bottom: 6px;
+  }
+  .consensus-bar {
+    height: 8px;
+    background: var(--red);
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+  }
+  .consensus-fill {
+    height: 100%;
+    background: var(--green);
+    border-radius: 4px;
+    transition: width 0.8s ease;
+  }
+  .consensus-pct {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 4px;
+    text-align: center;
+  }
+
+  /* Alert feed */
+  .alert-item {
+    display: flex;
+    gap: 10px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    align-items: flex-start;
+  }
+  .alert-item:last-child { border-bottom: none; }
+  .alert-icon { font-size: 16px; flex-shrink: 0; }
+  .alert-body { flex: 1; }
+  .alert-text { font-size: 13px; line-height: 1.4; }
+  .alert-time { font-size: 11px; color: var(--muted); margin-top: 3px; }
+
+  /* Table at bottom */
+  .full-table {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .table-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+  table { width: 100%; border-collapse: collapse; }
+  th {
+    background: var(--bg3);
+    padding: 10px 16px;
+    text-align: left;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--muted);
+    font-weight: 600;
+  }
+  td {
+    padding: 12px 16px;
+    font-size: 13px;
+    border-bottom: 1px solid rgba(30,45,71,0.5);
+  }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(59,130,246,0.05); }
+  .td-game { font-weight: 600; }
+  .td-delta { font-family: monospace; font-weight: 700; }
+  .td-delta.up { color: var(--green); }
+  .td-delta.down { color: var(--red); }
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .badge-sharp { background: rgba(245,158,11,0.15); color: var(--yellow); border: 1px solid rgba(245,158,11,0.3); }
+  .badge-fade { background: rgba(239,68,68,0.1); color: var(--red); }
+  .badge-follow { background: rgba(16,185,129,0.1); color: var(--green); }
+
+  /* Picks del Mingüer */
+  .picks-section {
+    margin-bottom: 24px;
+  }
+  .picks-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr) 1fr;
+    gap: 14px;
+    align-items: start;
+  }
+  .pick-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s, border-color 0.2s;
+  }
+  .pick-card:hover { transform: translateY(-2px); border-color: var(--accent); }
+  .pick-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+  }
+  .pick-card.pick-green::before { background: linear-gradient(90deg, #10b981, #34d399); }
+  .pick-card.pick-blue::before  { background: linear-gradient(90deg, #3b82f6, #60a5fa); }
+  .pick-card.pick-purple::before{ background: linear-gradient(90deg, #6366f1, #818cf8); }
+  .pick-card.pick-yellow::before{ background: linear-gradient(90deg, #f59e0b, #fbbf24); }
+  .pick-card.pick-red::before   { background: linear-gradient(90deg, #ef4444, #f87171); }
+  .pick-league {
+    font-size: 10px;
+    color: var(--muted);
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+  }
+  .pick-matchup {
+    font-size: 15px;
+    font-weight: 800;
+    margin-bottom: 4px;
+  }
+  .pick-bet {
+    font-size: 13px;
+    color: var(--accent);
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+  .pick-odds {
+    font-family: monospace;
+    font-size: 18px;
+    font-weight: 800;
+    margin-bottom: 8px;
+  }
+  .pick-odds.pos { color: var(--green); }
+  .pick-odds.neg { color: var(--accent); }
+  .pick-reason {
+    font-size: 11px;
+    color: var(--muted);
+    line-height: 1.5;
+    border-top: 1px solid var(--border);
+    padding-top: 8px;
+    margin-top: 4px;
+  }
+  .pick-conf {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 8px;
+  }
+  .pick-conf-label { font-size: 10px; color: var(--muted); }
+  .pick-conf-bar {
+    flex: 1;
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .pick-conf-fill { height: 100%; border-radius: 2px; background: var(--green); }
+  .pick-conf-pct { font-size: 10px; font-weight: 700; color: var(--green); }
+
+  /* Parlay card */
+  .parlay-card {
+    background: linear-gradient(135deg, #0f1f38, #1a1035);
+    border: 1px solid rgba(99,102,241,0.4);
+    border-radius: 14px;
+    padding: 16px;
+    position: relative;
+    overflow: hidden;
+  }
+  .parlay-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #f59e0b, #6366f1, #3b82f6);
+  }
+  .parlay-title {
+    font-size: 13px;
+    font-weight: 800;
+    color: var(--yellow);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .parlay-leg {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 7px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    font-size: 12px;
+  }
+  .parlay-leg:last-of-type { border-bottom: none; }
+  .parlay-num {
+    width: 18px; height: 18px;
+    background: rgba(99,102,241,0.3);
+    border-radius: 50%;
+    font-size: 10px;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    color: #818cf8;
+    margin-top: 1px;
+  }
+  .parlay-leg-text { flex: 1; line-height: 1.4; }
+  .parlay-leg-odds { font-family: monospace; font-weight: 700; color: var(--green); font-size: 12px; }
+  .parlay-payout {
+    margin-top: 12px;
+    padding: 10px;
+    background: rgba(245,158,11,0.08);
+    border: 1px solid rgba(245,158,11,0.2);
+    border-radius: 8px;
+    text-align: center;
+  }
+  .parlay-payout-label { font-size: 10px; color: var(--muted); margin-bottom: 3px; }
+  .parlay-payout-val { font-size: 20px; font-weight: 800; color: var(--yellow); font-family: monospace; }
+  .parlay-payout-sub { font-size: 10px; color: var(--muted); margin-top: 2px; }
+
+  @media (max-width: 1200px) {
+    .picks-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 700px) {
+    .picks-grid { grid-template-columns: 1fr; }
+  }
+
+  /* Responsive */
+  @media (max-width: 1024px) {
+    .main-grid { grid-template-columns: 1fr; }
+    .stats-row { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 600px) {
+    .stats-row { grid-template-columns: 1fr 1fr; }
+    .odds-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  /* Spinner */
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .spinning { animation: spin 1s linear infinite; display: inline-block; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo"><span>🤘🏽</span> Mingüer BetMaster</div>
+  <div class="header-right">
+    <div class="last-update">Actualizado: <span id="last-time">–</span></div>
+    <div class="live-badge"><div class="live-dot"></div> EN VIVO</div>
+    <button id="refresh-btn" onclick="refreshData()">
+      <span id="refresh-icon">↻</span> Actualizar
+    </button>
+  </div>
+</header>
+
+<div class="container">
+
+  <!-- Sport Tabs -->
+  <div class="sport-tabs">
+    <button class="tab active" onclick="setTab('soccer',this)">⚽ Fútbol</button>
+    <button class="tab" onclick="setTab('nba',this)">🏀 NBA</button>
+    <button class="tab" onclick="setTab('mlb',this)">⚾ MLB</button>
+  </div>
+
+  <!-- Stats Row -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-icon" style="background:rgba(59,130,246,0.1)">🎯</div>
+      <div class="stat-info">
+        <div class="stat-label">Partidos Activos</div>
+        <div class="stat-value" id="stat-games">8</div>
+        <div class="stat-sub" style="color:var(--green)">3 en vivo ahora</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon" style="background:rgba(245,158,11,0.1)">⚡</div>
+      <div class="stat-info">
+        <div class="stat-label">Alertas Sharp</div>
+        <div class="stat-value" id="stat-sharp" style="color:var(--yellow)">3</div>
+        <div class="stat-sub" style="color:var(--muted)">Movimiento inusual</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon" style="background:rgba(16,185,129,0.1)">📊</div>
+      <div class="stat-info">
+        <div class="stat-label">Mayor Movimiento</div>
+        <div class="stat-value" id="stat-move" style="color:var(--green)">+8.5</div>
+        <div class="stat-sub" style="color:var(--muted)" id="stat-move-game">LAL vs GSW</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon" style="background:rgba(99,102,241,0.1)">🏦</div>
+      <div class="stat-info">
+        <div class="stat-label">Sportsbooks</div>
+        <div class="stat-value" style="color:var(--accent2)">7</div>
+        <div class="stat-sub" style="color:var(--muted)">Comparando ahora</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Picks del Mingüer -->
+  <div class="picks-section">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+      <div class="section-title" style="margin-bottom:0">🤘🏽 Picks del Mingüer</div>
+      <div style="font-size:11px;color:var(--muted);background:var(--bg2);border:1px solid var(--border);padding:4px 12px;border-radius:20px;">
+        <span id="picks-date-label"></span>
+      </div>
+    </div>
+    <div class="picks-grid" id="picks-grid"></div>
+  </div>
+
+  <!-- Main Grid -->
+  <div class="main-grid">
+
+    <!-- LEFT: Games -->
+    <div>
+      <div class="section-title">Partidos de hoy</div>
+      <div id="games-list"></div>
+    </div>
+
+    <!-- RIGHT: Detail Panel -->
+    <div class="right-panel">
+
+      <!-- Line movement chart -->
+      <div class="panel-card">
+        <div class="section-title">Movimiento de Línea</div>
+        <div style="font-size:13px;color:var(--muted);margin-bottom:12px;" id="chart-game-label">LAL vs GSW · Moneyline</div>
+        <div class="chart-wrapper">
+          <canvas id="lineChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Odds comparison -->
+      <div class="panel-card">
+        <div class="section-title">Comparativa de Odds</div>
+        <div class="best-odds-list" id="odds-compare-list"></div>
+        <!-- Public % consensus -->
+        <div class="consensus-bar-wrap" id="consensus-section">
+          <div class="section-title" style="margin-top:14px">Acción Pública</div>
+          <div class="consensus-labels">
+            <span id="cons-away">LAL <span style="font-weight:700;color:var(--green)" id="cons-away-pct">63%</span></span>
+            <span id="cons-home">GSW <span style="font-weight:700;color:var(--red)" id="cons-home-pct">37%</span></span>
+          </div>
+          <div class="consensus-bar">
+            <div class="consensus-fill" id="consensus-fill" style="width:63%"></div>
+          </div>
+          <div class="consensus-pct" id="consensus-pct">💡 Línea se mueve <strong>en contra</strong> del público → Dinero sharp en GSW</div>
+        </div>
+      </div>
+
+      <!-- Alert feed -->
+      <div class="panel-card">
+        <div class="section-title">Feed de Alertas</div>
+        <div id="alert-feed"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Bottom table: Line movement log -->
+  <div class="full-table">
+    <div class="table-header">
+      <div class="section-title" style="margin-bottom:0">Log de Movimientos</div>
+      <div style="font-size:12px;color:var(--muted)">Últimas 2 horas</div>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Partido</th>
+          <th>Sportsbook</th>
+          <th>Mercado</th>
+          <th>Apertura</th>
+          <th>Actual</th>
+          <th>Delta</th>
+          <th>Señal</th>
+          <th>Hora</th>
+        </tr>
+      </thead>
+      <tbody id="movement-log"></tbody>
+    </table>
+  </div>
+
+</div>
+
+<script>
+// ========================================
+// PICKS DINÁMICOS POR DÍA
+// ========================================
+const WEEKLY_PICKS = [
+  // Domingo (0)
+  [
+    { color:'pick-green', league:'🇲🇽 Liga MX', matchup:'América vs Pumas', time:'19:00 hrs', venue:'Estadio Azteca', bet:'América ML', odds:1.72, conf:80, reason:'América dominante en casa con 5 victorias seguidas. Pumas sin gol fuera en 4 partidos. Línea moviéndose hacia el local toda la semana.' },
+    { color:'pick-blue', league:'🏴󠁧󠁢󠁥󠁮󠁧󠁿 Premier League', matchup:'Arsenal vs Chelsea', time:'10:00 hrs', venue:'Emirates Stadium', bet:'Arsenal ML', odds:1.85, conf:73, reason:'Arsenal en racha de 6 victorias consecutivas en casa. Chelsea irregular fuera. 4 de los últimos 5 H2H en Emirates terminaron con victoria local.' },
+    { color:'pick-purple', league:'🇪🇸 La Liga', matchup:'Real Madrid vs Sevilla', time:'14:00 hrs', venue:'Santiago Bernabéu', bet:'Real Madrid -1', odds:1.62, conf:82, reason:'Madrid invicto en casa en 2026. Sevilla 0 victorias en sus últimas 7 visitas al Bernabéu. Línea sharp moviéndose en favor del local.' },
+    { color:'pick-yellow', league:'🇩🇪 Bundesliga', matchup:'Bayern vs Dortmund', time:'11:30 hrs', venue:'Allianz Arena', bet:'Over 3.5 goles', odds:1.78, conf:69, reason:'7 de los últimos 8 Der Klassiker superaron los 3.5 goles. Ambos equipos en forma ofensiva. Total bajó de 4 a 3.5: RLM detectado.' },
+    { color:'pick-red', league:'🇮🇹 Serie A', matchup:'Napoli vs Juventus', time:'15:00 hrs', venue:'Estadio Maradona', bet:'Ambos anotan (BTTS)', odds:1.95, conf:71, reason:'BTTS en 5 de los últimos 6 H2H. Napoli siempre anota en casa, Juve nunca va a cero. Valor real en este mercado a cuota 1.95.' }
+  ],
+  // Lunes (1)
+  [
+    { color:'pick-blue', league:'🏀 NBA', matchup:'Lakers vs Celtics', time:'20:30 hrs', venue:'Crypto.com Arena', bet:'Celtics ML', odds:1.88, conf:74, reason:'Celtics 8-2 como visitantes esta temporada. Lakers con lesiones en su backcourt. Línea movió de -110 a -125 en Celtics: dinero sharp detectado.' },
+    { color:'pick-green', league:'🇲🇽 Liga MX', matchup:'Monterrey vs Tigres', time:'21:00 hrs', venue:'Estadio BBVA', bet:'Monterrey ML', odds:1.58, conf:79, reason:'Rayados invictos en casa en 2026 con 7 partidos. Tigres irregular fuera. El Clásico Regio históricamente favorece al local.' },
+    { color:'pick-purple', league:'⚽ Champions League', matchup:'PSG vs Man City', time:'14:00 hrs', venue:'Parc des Princes', bet:'Over 2.5 goles', odds:1.67, conf:76, reason:'4 de los últimos 5 encuentros entre ambos superaron 2.5. Dos mejores ataques en forma. Defensas porosas en Champions esta edición.' },
+    { color:'pick-yellow', league:'🇪🇸 La Liga', matchup:'Atletico vs Barcelona', time:'16:00 hrs', venue:'Metropolitano', bet:'Under 2.5 goles', odds:1.91, conf:68, reason:'Atletico con 4 partidos seguidos bajo 2.5 en casa. Barca flojo en ataque fuera. Simeone históricamente cierra espacios contra top equipos.' },
+    { color:'pick-red', league:'⚾ MLB', matchup:'Yankees vs Red Sox', time:'19:05 hrs', venue:'Yankee Stadium', bet:'Yankees ML', odds:1.65, conf:72, reason:'Yankees 12-3 en casa esta temporada. Red Sox bullpen cansado. Pitching de NY en forma con 3 aperturas sólidas consecutivas.' }
+  ],
+  // Martes (2)
+  [
+    { color:'pick-green', league:'⚽ Champions League', matchup:'Real Madrid vs Man City', time:'14:00 hrs', venue:'Santiago Bernabéu', bet:'Real Madrid ML', odds:2.10, conf:66, reason:'Madrid nunca ha perdido en el Bernabéu en fase eliminatoria de UCL. RLM detectado: 44% acción pública pero línea sube para Madrid.' },
+    { color:'pick-blue', league:'🌍 Europa League', matchup:'Roma vs Villarreal', time:'13:00 hrs', venue:'Olímpico de Roma', bet:'Roma ML', odds:1.75, conf:70, reason:'Roma 5-1 en casa en Europa League esta temporada. Villarreal debilitado sin su lateral derecho. Línea favorable para el local.' },
+    { color:'pick-purple', league:'🏀 NBA', matchup:'OKC vs Denver', time:'21:00 hrs', venue:'Paycom Center', bet:'OKC -4.5', odds:1.91, conf:73, reason:'OKC cubrió el spread en 7 de los últimos 9 en casa. Denver de viaje en su 2do partido en 2 noches. Dinero sharp detectado en favor del spread local.' },
+    { color:'pick-yellow', league:'🇲🇽 Liga MX', matchup:'Cruz Azul vs Toluca', time:'21:06 hrs', venue:'Ciudad de los Deportes', bet:'Cruz Azul ML', odds:1.55, conf:81, reason:'La Máquina invicta en casa con 68% prob. según modelos estadísticos. Toluca 0-4 fuera en 2026. Línea movió 8 puntos en favor del local.' },
+    { color:'pick-red', league:'🇩🇪 Bundesliga', matchup:'Leverkusen vs Frankfurt', time:'14:30 hrs', venue:'BayArena', bet:'Leverkusen ML', odds:1.60, conf:77, reason:'Leverkusen en casa con récord perfecto. Frankfurt flojo de visitante. Xabi Alonso mantiene su intensidad presionante en el BayArena.' }
+  ],
+  // Miércoles (3)
+  [
+    { color:'pick-green', league:'⚽ Champions League', matchup:'Bayern vs Arsenal', time:'14:00 hrs', venue:'Allianz Arena', bet:'Bayern ML', odds:1.78, conf:74, reason:'Bayern 8-0 en casa en UCL últimas 2 temporadas. Arsenal sin experiencia en fases finales. Línea sólida sin movimiento: consenso en Bayern.' },
+    { color:'pick-blue', league:'🏴󠁧󠁢󠁥󠁮󠁧󠁿 Premier League', matchup:'Liverpool vs Tottenham', time:'14:00 hrs', venue:'Anfield', bet:'Liverpool ML', odds:1.62, conf:82, reason:'Liverpool invicto en Anfield en 2026. Spurs 1-6 en últimas visitas a Anfield. Dinero sharp llegando consistentemente en el local.' },
+    { color:'pick-purple', league:'🇪🇸 La Liga', matchup:'Barcelona vs Getafe', time:'16:00 hrs', venue:'Montjuic', bet:'Barcelona -1.5', odds:1.73, conf:80, reason:'Barca gana 91% de sus partidos en casa vs equipos de zona baja. Getafe sin gol en 5 visitas consecutivas al Montjuic.' },
+    { color:'pick-yellow', league:'🇲🇽 Liga MX', matchup:'Chivas vs Necaxa', time:'21:00 hrs', venue:'Estadio Akron', bet:'Chivas ML', odds:1.68, conf:71, reason:'Rebaño con 5 victorias en sus últimos 6 en casa. Necaxa en caída libre perdiendo 4 de 5. Línea se movió desde -120 a -155 esta semana.' },
+    { color:'pick-red', league:'🌍 Europa League', matchup:'Atletico vs Lazio', time:'13:00 hrs', venue:'Metropolitano', bet:'Under 2.5 goles', odds:1.88, conf:69, reason:'Simeone en Europa juega ultra-cerrado. 5 de 6 partidos del Atleti en UEL terminaron bajo 2.5 goles esta temporada.' }
+  ],
+  // Jueves (4)
+  [
+    { color:'pick-green', league:'🌍 Europa League', matchup:'Man Utd vs Ajax', time:'14:00 hrs', venue:'Old Trafford', bet:'Man Utd ML', odds:1.70, conf:72, reason:'Old Trafford en Europa: Man Utd 6-1 en casa en UEL últimas 2 ediciones. Ajax irregular de visitante fuera de Holanda esta temporada.' },
+    { color:'pick-blue', league:'🇮🇹 Serie A', matchup:'Inter vs AC Milan', time:'14:45 hrs', venue:'San Siro', bet:'Inter ML', odds:1.80, conf:74, reason:'Inter dominando el Derby della Madonnina: 4 victorias en los últimos 5 derbis. AC Milan débil en defensa central sin titulares lesionados.' },
+    { color:'pick-purple', league:'🏀 NBA', matchup:'Boston vs Miami', time:'19:30 hrs', venue:'TD Garden', bet:'Boston -5.5', odds:1.91, conf:73, reason:'Celtics cubrieron spread en 8 de últimos 10 en casa. Miami 0-5 como visitantes en sus últimas 5 salidas. Línea sharp favoreciendo a Boston.' },
+    { color:'pick-yellow', league:'🇲🇽 Liga MX', matchup:'Monterrey vs León', time:'21:06 hrs', venue:'Estadio BBVA', bet:'Over 2.5 goles', odds:1.83, conf:70, reason:'5 de los últimos 6 H2H entre estos equipos superaron 2.5 goles. Monterrey promedia 2.1 goles/partido, León 1.9.' },
+    { color:'pick-red', league:'🇩🇪 Bundesliga', matchup:'Dortmund vs Leipzig', time:'14:30 hrs', venue:'Signal Iduna Park', bet:'Dortmund ML', odds:2.05, conf:65, reason:'BVB con afición que impulsa como local. Leipzig de viaje tras Champions. Valor real en Dortmund a cuota 2.05 según modelo estadístico.' }
+  ],
+  // Viernes (5)
+  [
+    { color:'pick-green', league:'🇲🇽 Liga MX', matchup:'Mazatlán vs Cruz Azul', time:'21:06 hrs', venue:'Estadio El Encanto', bet:'Cruz Azul ML', odds:1.47, conf:84, reason:'Cruz Azul invicto fuera de casa desde J1. Mazatlán es último lugar con solo 10 pts. La Máquina tiene 68% prob. de ganar según modelos.' },
+    { color:'pick-blue', league:'🏴󠁧󠁢󠁥󠁮󠁧󠁿 Premier League', matchup:'Bournemouth vs Man Utd', time:'14:00 hrs', venue:'Vitality Stadium', bet:'Over 2.5 goles', odds:1.53, conf:76, reason:'5 de los últimos 6 H2H entre estos equipos terminaron Over 2.5. Man Utd viene de ganar vs Aston Villa y ambos equipos anotan fuera de casa.' },
+    { color:'pick-purple', league:'🇪🇸 La Liga', matchup:'Villarreal vs Real Sociedad', time:'14:00 hrs', venue:'Estadio de la Cerámica', bet:'Villarreal ML', odds:1.51, conf:78, reason:'Villarreal busca su 4ta victoria consecutiva en casa. Real Sociedad flojea fuera. La línea -196 refleja la fortaleza local del Submarino Amarillo.' },
+    { color:'pick-yellow', league:'🇩🇪 Bundesliga', matchup:'Leipzig vs Hoffenheim', time:'13:30 hrs', venue:'Red Bull Arena', bet:'Leipzig ML', odds:1.57, conf:72, reason:'Leipzig sólido en casa, Hoffenheim en zona baja. Los últimos 3 H2H en Leipzig terminaron con victoria local. Línea moviéndose en favor del local.' },
+    { color:'pick-red', league:'🇲🇽 Liga MX', matchup:'Necaxa vs Tijuana', time:'19:00 hrs', venue:'Estadio Victoria', bet:'Ambos anotan (BTTS)', odds:2.18, conf:67, reason:'Necaxa siempre anota en casa. Tijuana necesita puntos y sale a atacar. Valor real en BTTS a cuota 2.18 para este duelo.' }
+  ],
+  // Sábado (6)
+  [
+    { color:'pick-green', league:'🏴󠁧󠁢󠁥󠁮󠁧󠁿 Premier League', matchup:'Man City vs Liverpool', time:'11:30 hrs', venue:'Etihad Stadium', bet:'Over 3.5 goles', odds:1.95, conf:71, reason:'6 de los últimos 8 encuentros entre ambos superaron 3.5. Dos mejores ataques de la liga jugando con todo. Línea bajó de 4 a 3.5: RLM detectado.' },
+    { color:'pick-blue', league:'🇪🇸 La Liga', matchup:'Real Madrid vs Atletico', time:'14:00 hrs', venue:'Santiago Bernabéu', bet:'Real Madrid ML', odds:1.83, conf:76, reason:'Madrid no pierde el Derbi Madrileño en casa desde 2021. Atletico irregular en visitas al Bernabéu. Línea moviéndose en favor del local.' },
+    { color:'pick-purple', league:'🇩🇪 Bundesliga', matchup:'Leverkusen vs Bayern', time:'12:30 hrs', venue:'BayArena', bet:'Ambos anotan (BTTS)', odds:1.72, conf:80, reason:'BTTS en los últimos 6 encuentros entre ambos. Leverkusen siempre anota. Bayern sin valla invicta en 8 partidos seguidos como visitante.' },
+    { color:'pick-yellow', league:'🇲🇽 Liga MX', matchup:'América vs Cruz Azul', time:'19:00 hrs', venue:'Estadio Azteca', bet:'América ML', odds:1.78, conf:75, reason:'América en casa ante su afición: 6-0-0 en Liga MX 2026. Cruz Azul cae en duelos de presión en el Azteca. Movimiento favorable de línea.' },
+    { color:'pick-red', league:'🇮🇹 Serie A', matchup:'Juventus vs Napoli', time:'14:00 hrs', venue:'Allianz Stadium', bet:'Under 2.5 goles', odds:1.90, conf:70, reason:'Juventus con 3 partidos consecutivos bajo 2.5 en casa. Napoli irregular en ataque de visitante. Sólida apuesta a la solidez defensiva.' }
+  ]
+];
+
+function renderDailyPicks() {
+  const today = new Date();
+  const dow = today.getDay();
+  const DAYS = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+  const MONTHS = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+
+  // Actualizar etiqueta de fecha
+  const dateLabel = document.getElementById('picks-date-label');
+  if (dateLabel) {
+    dateLabel.textContent = `📅 ${DAYS[dow]} ${today.getDate()} ${MONTHS[today.getMonth()]} ${today.getFullYear()} · Hora México (CST)`;
+  }
+
+  const picks = WEEKLY_PICKS[dow];
+  const parlayLegs = picks.slice(0, 3);
+  const parlayOdds = parlayLegs.reduce((acc, p) => acc * p.odds, 1);
+  const parlayDate = `${today.getDate()} ${MONTHS[today.getMonth()]}`;
+
+  let html = picks.map(p => {
+    const isPos = p.odds >= 2.0;
+    return `
+      <div class="pick-card ${p.color}">
+        <div class="pick-league">${p.league}</div>
+        <div class="pick-matchup">${p.matchup}</div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:6px;">🕐 ${p.time} · ${p.venue}</div>
+        <div class="pick-bet">${p.bet}</div>
+        <div class="pick-odds ${isPos ? 'pos' : 'neg'}">${p.odds.toFixed(2)}</div>
+        <div class="pick-reason">${p.reason}</div>
+        <div class="pick-conf">
+          <span class="pick-conf-label">Confianza</span>
+          <div class="pick-conf-bar"><div class="pick-conf-fill" style="width:${p.conf}%"></div></div>
+          <span class="pick-conf-pct">${p.conf}%</span>
+        </div>
+      </div>`;
+  }).join('');
+
+  html += `
+    <div class="parlay-card">
+      <div class="parlay-title">🎰 Parlay del Día · ${parlayDate}</div>
+      ${parlayLegs.map((p, i) => `
+        <div class="parlay-leg">
+          <div class="parlay-num">${i + 1}</div>
+          <div class="parlay-leg-text">${p.bet} · ${p.time}</div>
+          <div class="parlay-leg-odds">${p.odds.toFixed(2)}</div>
+        </div>`).join('')}
+      <div class="parlay-payout">
+        <div class="parlay-payout-label">Pago estimado · apuesta $100 MXN</div>
+        <div class="parlay-payout-val">$${Math.round(parlayOdds * 100)} MXN</div>
+        <div class="parlay-payout-sub">Odds combinadas: ${parlayOdds.toFixed(2)} · 3 piernas 🔥</div>
+      </div>
+    </div>`;
+
+  document.getElementById('picks-grid').innerHTML = html;
+}
+
+// ========================================
+// DATA ENGINE
+// ========================================
+const BOOKS = ['Bet365','Caliente','Playdoit','Stake','TeamMéxico'];
+const BOOK_COLORS = ['#3b82f6','#ef4444','#10b981','#f59e0b','#6366f1'];
+
+const NBA_GAMES = [
+  { id:1, away:'LAL', home:'GSW', time:'EN VIVO', period:'Q3 4:22', score:'78-71', sharpAlert:true,
+    awayML:[-110,115,-108,-112,113], homeML:[100,-130,112,105,-128],
+    spread:[-3.5,-3.5,-3,-3.5,-3.5], total:[228,227.5,228,228.5,227],
+    openML:-115, curML:-128, consPct:63 },
+  { id:2, away:'BOS', home:'MIA', time:'20:30 ET', period:'', score:'', sharpAlert:false,
+    awayML:[-135,-140,-138,-132,-140], homeML:[120,118,122,115,120],
+    spread:[-3,-3,-2.5,-3,-3], total:[215,214.5,215,215.5,214],
+    openML:-130, curML:-140, consPct:55 },
+  { id:3, away:'DEN', home:'PHX', time:'EN VIVO', period:'Q2 8:11', score:'52-48', sharpAlert:true,
+    awayML:[-175,-180,-178,-170,-180], homeML:[155,158,162,148,155],
+    spread:[-5,-5,-5.5,-5,-5], total:[230,229.5,230,231,229],
+    openML:-155, curML:-180, consPct:71 },
+  { id:4, away:'MIL', home:'CHI', time:'19:00 ET', period:'', score:'', sharpAlert:false,
+    awayML:[-160,-165,-162,-158,-165], homeML:[140,142,145,135,140],
+    spread:[-4.5,-5,-4.5,-4.5,-5], total:[220,219.5,220,220.5,219],
+    openML:-165, curML:-160, consPct:68 },
+  { id:5, away:'OKC', home:'DAL', time:'EN VIVO', period:'Q4 1:45', score:'108-104', sharpAlert:true,
+    awayML:[-200,-205,-202,-198,-205], homeML:[175,178,182,168,175],
+    spread:[-5.5,-5.5,-6,-5.5,-5.5], total:[225,224.5,225,225.5,224],
+    openML:-185, curML:-205, consPct:74 },
+];
+
+const MLB_GAMES = [
+  { id:10, away:'NYY', home:'BOS', time:'13:05 ET', period:'', score:'', sharpAlert:false,
+    awayML:[-120,-125,-118,-122,-125], homeML:[102,108,100,104,108],
+    spread:[-1.5,-1.5,-1.5,-1.5,-1.5], total:[9,8.5,9,9,8.5],
+    openML:-118, curML:-125, consPct:58 },
+  { id:11, away:'LAD', home:'SF', time:'22:10 ET', period:'', score:'', sharpAlert:true,
+    awayML:[-145,-150,-148,-142,-150], homeML:[126,130,132,120,126],
+    spread:[-1.5,-1.5,-1.5,-1.5,-1.5], total:[8,7.5,8,8,7.5],
+    openML:-138, curML:-150, consPct:67 },
+];
+
+const SOCCER_GAMES = [
+  // 🏴󠁧󠁢󠁥󠁮󠁧󠁿 Premier League
+  { id:20, away:'MCI', home:'ARS', time:'EN VIVO', period:'65\'', score:'1-1', sharpAlert:true, league:'🏴󠁧󠁢󠁥󠁮󠁧󠁿 Premier League',
+    awayML:[240,238,245,235,240], homeML:[115,118,112,120,115],
+    spread:[0,0,0,0,0], total:[2.5,2.5,3,2.5,2.5],
+    openML:210, curML:240, consPct:44 },
+  { id:22, away:'LIV', home:'CHE', time:'18:30 ET', period:'', score:'', sharpAlert:false, league:'🏴󠁧󠁢󠁥󠁮󠁧󠁿 Premier League',
+    awayML:[-130,-135,-128,-132,-135], homeML:[310,315,308,312,315],
+    spread:[0,0,0,0,0], total:[3,2.5,3,3,2.5],
+    openML:-125, curML:-135, consPct:62 },
+  // 🇪🇸 La Liga
+  { id:21, away:'BAR', home:'RMA', time:'21:00 ET', period:'', score:'', sharpAlert:false, league:'🇪🇸 La Liga',
+    awayML:[180,178,185,175,180], homeML:[155,158,150,162,155],
+    spread:[0,0,0,0,0], total:[3,2.5,3,3,2.5],
+    openML:175, curML:180, consPct:51 },
+  { id:23, away:'ATM', home:'SEV', time:'16:00 ET', period:'', score:'', sharpAlert:false, league:'🇪🇸 La Liga',
+    awayML:[-180,-185,-178,-182,-185], homeML:[450,455,448,452,455],
+    spread:[0,0,0,0,0], total:[2.5,2.5,2.5,2.5,2.5],
+    openML:-175, curML:-185, consPct:70 },
+  // 🏆 Champions League
+  { id:24, away:'PSG', home:'BYN', time:'EN VIVO', period:'78\'', score:'2-1', sharpAlert:true, league:'🏆 Champions League',
+    awayML:[195,198,192,200,195], homeML:[140,138,145,135,140],
+    spread:[0,0,0,0,0], total:[3,3,3.5,3,3],
+    openML:180, curML:195, consPct:47 },
+  { id:25, away:'INT', home:'DOR', time:'14:00 ET', period:'', score:'', sharpAlert:false, league:'🏆 Champions League',
+    awayML:[-150,-155,-148,-152,-155], homeML:[380,385,378,382,385],
+    spread:[0,0,0,0,0], total:[2.5,2.5,3,2.5,2.5],
+    openML:-145, curML:-155, consPct:65 },
+  // 🟠 Europa League
+  { id:26, away:'MUN', home:'ROM', time:'EN VIVO', period:'55\'', score:'0-0', sharpAlert:true, league:'🟠 Europa League',
+    awayML:[-165,-170,-162,-168,-170], homeML:[420,425,418,422,425],
+    spread:[0,0,0,0,0], total:[2.5,2.5,2.5,2.5,2.5],
+    openML:-155, curML:-170, consPct:72 },
+  { id:27, away:'VIL', home:'AJX', time:'17:00 ET', period:'', score:'', sharpAlert:false, league:'🟠 Europa League',
+    awayML:[-120,-125,-118,-122,-125], homeML:[300,305,298,302,305],
+    spread:[0,0,0,0,0], total:[2.5,2.5,3,2.5,2.5],
+    openML:-115, curML:-125, consPct:58 },
+  // 🇩🇪 Bundesliga
+  { id:28, away:'BAY', home:'BVB', time:'12:30 ET', period:'', score:'', sharpAlert:true, league:'🇩🇪 Bundesliga',
+    awayML:[-210,-215,-208,-212,-215], homeML:[510,515,508,512,515],
+    spread:[0,0,0,0,0], total:[3.5,3.5,4,3.5,3.5],
+    openML:-195, curML:-215, consPct:75 },
+  { id:29, away:'LEV', home:'STU', time:'09:30 ET', period:'', score:'', sharpAlert:false, league:'🇩🇪 Bundesliga',
+    awayML:[-145,-150,-142,-148,-150], homeML:[360,365,358,362,365],
+    spread:[0,0,0,0,0], total:[3,2.5,3,3,2.5],
+    openML:-140, curML:-150, consPct:66 },
+  // 🇮🇹 Serie A
+  { id:30, away:'JUV', home:'MIL', time:'15:00 ET', period:'', score:'', sharpAlert:false, league:'🇮🇹 Serie A',
+    awayML:[165,168,162,170,165], homeML:[175,178,172,180,175],
+    spread:[0,0,0,0,0], total:[2.5,2.5,2.5,2.5,2.5],
+    openML:160, curML:165, consPct:49 },
+  { id:31, away:'NAP', home:'INT', time:'EN VIVO', period:'40\'', score:'1-0', sharpAlert:true, league:'🇮🇹 Serie A',
+    awayML:[220,225,218,222,225], homeML:[125,128,122,130,125],
+    spread:[0,0,0,0,0], total:[2.5,2.5,3,2.5,2.5],
+    openML:200, curML:225, consPct:42 },
+  // 🇲🇽 Liga MX
+  { id:32, away:'AME', home:'GDL', time:'EN VIVO', period:'70\'', score:'1-1', sharpAlert:true, league:'🇲🇽 Liga MX',
+    awayML:[-140,-145,-138,-142,-145], homeML:[350,355,348,352,355],
+    spread:[0,0,0,0,0], total:[2.5,2.5,2.5,2.5,2.5],
+    openML:-130, curML:-145, consPct:68 },
+  { id:33, away:'PUM', home:'CRU', time:'21:00 ET', period:'', score:'', sharpAlert:false, league:'🇲🇽 Liga MX',
+    awayML:[160,162,158,165,160], homeML:[165,168,162,170,165],
+    spread:[0,0,0,0,0], total:[2.5,2.5,2.5,2.5,2.5],
+    openML:155, curML:160, consPct:50 },
+  { id:34, away:'TIG', home:'MTY', time:'20:00 ET', period:'', score:'', sharpAlert:false, league:'🇲🇽 Liga MX',
+    awayML:[130,132,128,135,130], homeML:[195,198,192,200,195],
+    spread:[0,0,0,0,0], total:[2.5,2.5,2.5,2.5,2.5],
+    openML:125, curML:130, consPct:54 },
+  // 🇺🇸 MLS
+  { id:35, away:'LAG', home:'LAF', time:'22:30 ET', period:'', score:'', sharpAlert:false, league:'🇺🇸 MLS',
+    awayML:[145,148,142,150,145], homeML:[175,178,172,180,175],
+    spread:[0,0,0,0,0], total:[2.5,2.5,3,2.5,2.5],
+    openML:140, curML:145, consPct:52 },
+  { id:36, away:'NYC', home:'ATL', time:'19:30 ET', period:'', score:'', sharpAlert:false, league:'🇺🇸 MLS',
+    awayML:[120,122,118,125,120], homeML:[215,218,212,220,215],
+    spread:[0,0,0,0,0], total:[2.5,2.5,3,2.5,2.5],
+    openML:115, curML:120, consPct:56 },
+];
+
+const ALERTS = [
+  { icon:'⚡', text:'Sharp money en <strong>AME vs GDL</strong> (Liga MX) · Caliente movió línea contra público.', time:'hace 3 min' },
+  { icon:'🇲🇽', text:'Movimiento brusco en <strong>AME ML</strong> · De -130 a -145 en 20 min. 68% acción en América.', time:'hace 8 min' },
+  { icon:'🏆', text:'Reverse line movement en <strong>PSG vs BYN</strong> · 47% acción pública pero línea sube en Stake.', time:'hace 13 min' },
+  { icon:'🟠', text:'Sharp money en <strong>MUN vs ROM</strong> (Europa League) · 72% acción en MUN, línea sigue subiendo.', time:'hace 19 min' },
+  { icon:'💡', text:'Total <strong>MCI vs ARS</strong> bajó de 3 a 2.5 en TeamMéxico y Bet365. Posible lesión o clima.', time:'hace 28 min' },
+  { icon:'🇩🇪', text:'<strong>BAY vs BVB</strong> (Bundesliga) tomando acción inusual en Bet365 y Playdoit simultáneamente.', time:'hace 35 min' },
+];
+
+const LOG_DATA = [
+  { game:'DEN vs PHX', book:'Caliente', market:'Spread', open:'-5', cur:'-5.5', delta:-0.5, signal:'follow', time:'08:47' },
+  { game:'LAL vs GSW', book:'Bet365', market:'ML', open:'-115', cur:'-128', delta:-13, signal:'sharp', time:'08:52' },
+  { game:'OKC vs DAL', book:'Stake', market:'ML', open:'-185', cur:'-205', delta:-20, signal:'sharp', time:'08:58' },
+  { game:'LAD vs SF', book:'Bet365', market:'ML', open:'-138', cur:'-150', delta:-12, signal:'sharp', time:'09:02' },
+  { game:'MCI vs ARS', book:'TeamMéxico', market:'Total', open:'3.0', cur:'2.5', delta:-0.5, signal:'follow', time:'09:07' },
+  { game:'BOS vs MIA', book:'Playdoit', market:'Spread', open:'-3', cur:'-3.5', delta:-0.5, signal:'fade', time:'09:11' },
+  { game:'MIL vs CHI', book:'BetRivers', market:'ML', open:'-165', cur:'-160', delta:5, signal:'fade', time:'09:15' },
+  { game:'DEN vs PHX', book:'Caesars', market:'ML', open:'-155', cur:'-180', delta:-25, signal:'sharp', time:'09:19' },
+];
+
+// State
+let currentTab = 'soccer';
+let selectedGame = null;
+let lineChart = null;
+
+function getGames() {
+  if (currentTab==='nba') return NBA_GAMES;
+  if (currentTab==='mlb') return MLB_GAMES;
+  // Rotar partidos de fútbol según día de la semana
+  const dow = new Date().getDay();
+  const rotations = {
+    0: [20,21,30,31,35,36,28,29],   // Dom: Premier + La Liga + Serie A + MLS + Bundesliga
+    1: [24,25,22,21,35,36,28],       // Lun: Champions + Premier + La Liga + MLS
+    2: [24,25,26,27,28,29,32],       // Mar: Champions + Europa + Bundesliga + Liga MX
+    3: [24,26,22,32,33,30,35],       // Mié: Champions + Europa + Premier + Liga MX + Serie A
+    4: [26,27,28,29,35,36,31],       // Jue: Europa + Bundesliga + MLS + Serie A
+    5: [20,22,21,23,28,32,33,34],    // Vie: Premier + La Liga + Bundesliga + Liga MX
+    6: [20,22,21,23,28,29,30,31,32,33,34,35] // Sáb: todos
+  };
+  const ids = rotations[dow] || rotations[6];
+  return SOCCER_GAMES.filter(g => ids.includes(g.id));
+}
+
+// ========================================
+// RENDER FUNCTIONS
+// ========================================
+function formatML(v) {
+  // Convertir American odds a formato decimal
+  const dec = v > 0 ? (v / 100) + 1 : (100 / Math.abs(v)) + 1;
+  return dec.toFixed(2);
+}
+
+function renderGames() {
+  const games = getGames();
+  const el = document.getElementById('games-list');
+  el.innerHTML = '';
+  games.forEach((g, i) => {
+    const isSelected = selectedGame && selectedGame.id === g.id;
+    const delta = g.curML - g.openML;
+    const deltaStr = delta > 0 ? `+${delta}` : `${delta}`;
+    const isUp = delta > 0;
+    const isLive = g.period !== '';
+
+    const card = document.createElement('div');
+    card.className = `game-card${isSelected ? ' selected':''}${g.sharpAlert ? ' sharp-alert':''}`;
+    card.onclick = () => selectGame(g);
+
+    // Best odds index
+    const bestAwayIdx = g.awayML.reduce((bi, v, i) => v > g.awayML[bi] ? i : bi, 0);
+    const bestHomeIdx = g.homeML.reduce((bi, v, i) => v > g.homeML[bi] ? i : bi, 0);
+
+    card.innerHTML = `
+      <div class="game-header">
+        <div class="game-teams">
+          ${g.league ? `<div style="font-size:11px;color:var(--muted);margin-bottom:5px;font-weight:600;letter-spacing:0.3px">${g.league}</div>` : ''}
+          <div class="matchup">
+            ${g.away} <span style="color:var(--muted);font-weight:400">vs</span> ${g.home}
+            ${isLive ? '<span class="live-tag">EN VIVO</span>' : ''}
+          </div>
+          <div class="game-time">${g.time} ${g.period ? '· '+g.period : ''}</div>
+        </div>
+        ${isLive ? `
+        <div class="score-tag">
+          <div class="score-display">${g.score}</div>
+          <div class="score-period">${g.period}</div>
+        </div>` : ''}
+      </div>
+      <div class="odds-grid">
+        ${BOOKS.slice(0,5).map((b,idx) => `
+          <div class="odds-cell${idx===bestAwayIdx ? ' best-odds':''}">
+            <div class="odds-book">${b}</div>
+            <div class="odds-ml ${g.awayML[idx]>0?'pos':'neg'}">${formatML(g.awayML[idx])}</div>
+            <div class="odds-spread">${g.away} · spread ${g.spread[idx]}</div>
+          </div>
+        `).join('')}
+      </div>
+      <div class="movement">
+        <span class="mv-arrow ${isUp?'mv-up':'mv-down'}">${isUp?'↑':'↓'}</span>
+        <span class="mv-text">Apertura ${formatML(g.openML)} → Actual</span>
+        <span class="mv-delta ${isUp?'mv-up':'mv-down'}">${formatML(g.curML)}</span>
+        <span class="mv-delta" style="color:var(--muted);font-size:11px">(${deltaStr})</span>
+        ${g.sharpAlert ? '<span class="sharp-badge">⚡ SHARP</span>' : ''}
+      </div>
+    `;
+    el.appendChild(card);
+  });
+
+  // select first by default
+  if (!selectedGame) selectGame(games[0]);
+}
+
+function selectGame(g) {
+  selectedGame = g;
+  renderGames(); // re-render to update selection
+  renderRightPanel(g);
+}
+
+function renderRightPanel(g) {
+  document.getElementById('chart-game-label').textContent = `${g.away} vs ${g.home} · Moneyline`;
+  renderLineChart(g);
+  renderOddsCompare(g);
+  renderConsensus(g);
+  renderAlerts();
+}
+
+function renderLineChart(g) {
+  const ctx = document.getElementById('lineChart').getContext('2d');
+
+  // Simulate 8 time points of line movement
+  const base = g.openML;
+  const end = g.curML;
+  const steps = 8;
+  const points = Array.from({length: steps}, (_,i) => {
+    const t = i/(steps-1);
+    const noise = (Math.random()-0.5)*4;
+    return Math.round(base + (end-base)*t + noise);
+  });
+  points[0] = base; points[steps-1] = end;
+
+  const labels = ['Open','6h ago','5h ago','4h ago','3h ago','2h ago','1h ago','Now'];
+
+  if (lineChart) lineChart.destroy();
+
+  lineChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        label: `${g.away} ML`,
+        data: points,
+        borderColor: '#3b82f6',
+        backgroundColor: 'rgba(59,130,246,0.1)',
+        fill: true,
+        tension: 0.4,
+        pointBackgroundColor: '#3b82f6',
+        pointRadius: 4,
+        pointHoverRadius: 6,
+        borderWidth: 2.5,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#141e2e',
+          borderColor: '#1e2d47',
+          borderWidth: 1,
+          titleColor: '#94a3b8',
+          bodyColor: '#e2e8f0',
+          callbacks: {
+            label: ctx => `  ML: ${ctx.raw > 0 ? '+':''}${ctx.raw}`
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: { color: 'rgba(30,45,71,0.8)' },
+          ticks: { color: '#64748b', font: { size: 10 } }
+        },
+        y: {
+          grid: { color: 'rgba(30,45,71,0.8)' },
+          ticks: {
+            color: '#64748b',
+            font: { size: 10 },
+            callback: v => (v>0?'+':'')+v
+          }
+        }
+      }
+    }
+  });
+}
+
+function renderOddsCompare(g) {
+  const el = document.getElementById('odds-compare-list');
+  const bestAway = Math.max(...g.awayML);
+  const bestHome = Math.max(...g.homeML);
+  el.innerHTML = BOOKS.map((b,i) => `
+    <div class="book-row">
+      <div class="book-name">
+        <div class="book-dot" style="background:${BOOK_COLORS[i]}"></div>
+        ${b}
+      </div>
+      <div class="book-odds-pair">
+        <div class="book-odd${g.awayML[i]===bestAway?' best-v':''}">${formatML(g.awayML[i])}</div>
+        <div class="book-odd${g.homeML[i]===bestHome?' best-v':''}">${formatML(g.homeML[i])}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderConsensus(g) {
+  const pct = g.consPct;
+  document.getElementById('cons-away').innerHTML = `${g.away} <span style="font-weight:700;color:var(--green)">${pct}%</span>`;
+  document.getElementById('cons-home').innerHTML = `${g.home} <span style="font-weight:700;color:var(--red)">${100-pct}%</span>`;
+  document.getElementById('consensus-fill').style.width = pct+'%';
+
+  const isRLM = (pct > 55 && g.curML < g.openML) || (pct < 45 && g.curML > g.openML);
+  document.getElementById('consensus-pct').innerHTML = isRLM
+    ? `⚡ <strong>Reverse Line Movement</strong> · Señal de dinero sharp detectada`
+    : `📊 Línea <strong>siguiendo</strong> la acción pública · ${pct}% en ${g.away}`;
+}
+
+function renderAlerts() {
+  const el = document.getElementById('alert-feed');
+  el.innerHTML = ALERTS.map(a => `
+    <div class="alert-item">
+      <div class="alert-icon">${a.icon}</div>
+      <div class="alert-body">
+        <div class="alert-text">${a.text}</div>
+        <div class="alert-time">${a.time}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderLog() {
+  const el = document.getElementById('movement-log');
+  el.innerHTML = LOG_DATA.map(r => {
+    const deltaVal = typeof r.delta === 'number' ? r.delta : parseFloat(r.delta);
+    const cls = deltaVal < 0 ? 'down' : 'up';
+    const deltaStr = deltaVal > 0 ? `+${r.delta}` : `${r.delta}`;
+    const signalMap = { sharp: '<span class="badge badge-sharp">⚡ Sharp</span>', fade: '<span class="badge badge-fade">↘ Fade</span>', follow: '<span class="badge badge-follow">↗ Follow</span>' };
+    return `<tr>
+      <td class="td-game">${r.game}</td>
+      <td>${r.book}</td>
+      <td>${r.market}</td>
+      <td style="font-family:monospace;color:var(--muted)">${r.open}</td>
+      <td style="font-family:monospace;font-weight:700">${r.cur}</td>
+      <td class="td-delta ${cls}">${deltaStr}</td>
+      <td>${signalMap[r.signal]||''}</td>
+      <td style="color:var(--muted)">${r.time}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ========================================
+// CONTROLS
+// ========================================
+function setTab(sport, el) {
+  currentTab = sport;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  selectedGame = null;
+  renderGames();
+
+  const counts = { nba:8, mlb:15, soccer:16 };
+  document.getElementById('stat-games').textContent = counts[sport];
+}
+
+function refreshData() {
+  const icon = document.getElementById('refresh-icon');
+  icon.className = 'spinning';
+  setTimeout(() => {
+    icon.className = '';
+    icon.textContent = '↻';
+    const now = new Date();
+    document.getElementById('last-time').textContent =
+      now.toLocaleTimeString('es-MX', {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+    // Slight variation
+    if (selectedGame) {
+      selectedGame.curML += (Math.random()>0.5?1:-1)*Math.round(Math.random()*3);
+      renderRightPanel(selectedGame);
+    }
+  }, 800);
+}
+
+// ========================================
+// INIT
+// ========================================
+function init() {
+  renderDailyPicks();
+  renderGames();
+  renderAlerts();
+  renderLog();
+  const now = new Date();
+  document.getElementById('last-time').textContent =
+    now.toLocaleTimeString('es-MX', {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+
+  // Auto-refresh every 30s
+  setInterval(() => {
+    // Simulate tiny ML movements
+    getGames().forEach(g => {
+      const drift = (Math.random()>0.5?1:-1) * Math.round(Math.random()*2);
+      g.curML += drift;
+      g.awayML = g.awayML.map(v => v + (Math.random()>0.5?1:-1));
+      g.homeML = g.homeML.map(v => v + (Math.random()>0.5?1:-1));
+    });
+    renderGames();
+    if (selectedGame) renderRightPanel(selectedGame);
+    const now2 = new Date();
+    document.getElementById('last-time').textContent =
+      now2.toLocaleTimeString('es-MX', {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  }, 30000);
+}
+
+init();
+</script>
+</body>
+</html>
